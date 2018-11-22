@@ -21,6 +21,10 @@ class Sintatico():
         self.tempSeed   = 0;
         self.tempLivres = [];
 
+        # Labels:
+        self.labelSeed   = 0;
+        self.labelLivres = [];
+
     def fecha(self):
         self.lexico.fecha();
 
@@ -46,6 +50,17 @@ class Sintatico():
         if(temp not in self.tempLivres):
             self.tempLivres.append(temp);
 
+    def geraLabel(self):
+        if(len(self.labelLivres) > 0):
+            return self.labelLivres.pop();
+        
+        self.labelSeed += 1;
+        return "_label" + str(self.labelSeed);
+
+    def liberaLabel(self, label):
+        if(label not in self.labelLivres):
+            self.labelLivres.append(label);
+
     def function(self):
         self.type();
         self.consume(Token.IDENT);
@@ -64,8 +79,10 @@ class Sintatico():
 
     def bloco(self):
         self.consume(Token.ABRECHA);
-        self.stmtList();
+        codigo = self.stmtList();
+        print(codigo);
         self.consume(Token.FECHACHA);
+        return codigo;
 
     def argList(self):
         if(Atual.token in self.first["argList"]):
@@ -87,46 +104,72 @@ class Sintatico():
 
     def stmtList(self):
         if(Atual.token in self.first["stmtList"]):
-            self.stmt();
-            self.stmtList();
+            codigoStmt = self.stmt(None, None);
+            codigoList = self.stmtList();
+            return codigoStmt + codigoList;
         else:
-            pass;
+            return [];
 
-    def stmt(self):
+    def stmt(self, inicio, fim):
         if(Atual.token in self.first["forStmt"]):
-            self.forStmt();
+            return self.forStmt();
         elif(Atual.token in self.first["whileStmt"]):
-            self.whileStmt();
+            return self.whileStmt();
         elif(Atual.token in self.first["expr"]):
-            self.expr();
+            (codigo, res) = self.expr();
             self.consume(Token.PTOVIRG);
+            return codigo;
         elif(Atual.token in self.first["ifStmt"]):
-            self.ifStmt();
+            return self.ifStmt();
         elif(Atual.token in self.first["bloco"]):
-            self.bloco();
+            return self.bloco();
         elif(Atual.token == Token.BREAK):
             self.consume(Token.BREAK);
             self.consume(Token.PTOVIRG);
+            return [];
         elif(Atual.token == Token.CONTINUE):
             self.consume(Token.CONTINUE);
             self.consume(Token.PTOVIRG);
+            return [];
         elif(Atual.token in self.first["declaration"]):
             self.declaration();
+            return [];
         elif(Atual.token in self.first["ioStmt"]):
-            self.ioStmt();
+            return self.ioStmt();
         else:
             self.consume(Token.PTOVIRG);
+            return [];
 
     def forStmt(self):
         self.consume(Token.FOR);
         self.consume(Token.ABREPAR);
-        self.optExpr();
+
+        (atrib, resA) = self.optExpr();
+
         self.consume(Token.PTOVIRG);
-        self.optExpr();
+
+        (compa, resC) = self.optExpr();
+
         self.consume(Token.PTOVIRG);
-        self.optExpr();
+
+        (incre, resI) = self.optExpr();
+
         self.consume(Token.FECHAPAR);
-        self.stmt();
+
+        inicio = self.geraLabel();
+        fim    = self.geraLabel();
+
+        listaCom = self.stmt(inicio, fim);
+        codigo   = [];
+        codigo.append(('label', inicio, None, None));
+        codigo = codigo + atrib;
+        codigo = codigo + compa;
+        codigo.append(('if', resC, fim, None));
+        codigo = codigo + listaCom + incre;
+        codigo.append(('jump', inicio, None, None));
+        codigo.append(('label', fim, None, None));
+
+        return codigo;
 
     def ioStmt(self):
         if(Atual.token == Token.SCAN):
@@ -140,31 +183,63 @@ class Sintatico():
         else:
             self.consume(Token.PRINT);
             self.consume(Token.ABREPAR);
-            self.outList();
+            codigo = self.outList();
             self.consume(Token.FECHAPAR);
             self.consume(Token.PTOVIRG);
+            return codigo;
 
     def whileStmt(self):
         self.consume(Token.WHILE);
         self.consume(Token.ABREPAR);
-        self.expr();
+
+        (expr, res) = self.expr();
+        
         self.consume(Token.FECHAPAR);
-        self.stmt();
+
+        inicio = self.geraLabel();
+        fim    = self.geraLabel();
+
+        listaCom = self.stmt(inicio, fim);
+        codigo   = [];
+        codigo.append(('label', inicio, None, None));
+        codigo   = codigo + expr;
+        codigo.append(('if', res, fim, None));
+        codigo   = codigo + listaCom;
+        codigo.append(('jump', inicio, None, None));
+        codigo.append(('label', fim, None, None));
+
+        return codigo;
 
     def ifStmt(self):
         self.consume(Token.IF);
         self.consume(Token.ABREPAR);
-        self.expr();
+
+        (expr, res) = self.expr();
+
         self.consume(Token.FECHAPAR);
-        self.stmt();
-        self.elsePart();
+
+        inicio = self.geraLabel();
+        fim    = self.geraLabel();
+
+        listaCom = self.stmt(inicio, fim);
+        listaComElse = self.elsePart();
+
+        codigo = [];
+        codigo.append(('label', inicio, None, None));
+        codigo = codigo + expr;
+        codigo.append(('if', res, fim, None));
+        codigo = codigo + listaCom;
+        codigo.append(('label', fim, None, None));
+        codigo = codigo + listaComElse;
+
+        return codigo;
 
     def elsePart(self):
         if(Atual.token == Token.ELSE):
             self.consume(Token.ELSE);
-            self.stmt();
+            return self.stmt(None, None);
         else:
-            pass;
+            return [];
 
     def declaration(self):
         temp1 = self.type();
@@ -208,7 +283,7 @@ class Sintatico():
         if(Atual.token in self.first["expr"]):
             return self.expr();
         else:
-            return []; # Vazio.
+            return ([], None); # Vazio.
 
     def outList(self):
         listaO = self.out();
@@ -254,31 +329,28 @@ class Sintatico():
 
     def expr(self):
         (left, codigo, res) = self.atrib();
-        print(codigo);
-        return codigo;
+        return (codigo, res);
 
     def atrib(self):
         (leftO, listaO, resO) = self.Or();
-        (leftA, listaA, resA) = self.restoAtrib();
+        (leftA, listaA, resA) = self.restoAtrib(resO);
 
         if((not leftO) and (not leftA)):
             raise ErroSintatico(Atual.token, "Atribuicao invalida.");
 
-        quad = ('=', resO, resA, None);
-        listaO.append(quad);
-
         return (False, listaO + listaA, resO);
 
-    def restoAtrib(self):
+    def restoAtrib(self, valor):
         if(Atual.token == Token.IGUAL):
             self.consume(Token.IGUAL);
             (left, lista, res) = self.atrib();
+            lista.append(('=', valor, res, None));
             return (False, lista, res);
         else:
         	return (True, [], None); # Vazio.
 
     def Or(self):
-        (leftA, listaA, resA)  = self.And();
+        (leftA, listaA, resA) = self.And();
         (leftO, listaO, resO) = self.restoOr(resA);
 
         if(leftA and leftO):
@@ -442,14 +514,14 @@ class Sintatico():
             self.consume(Token.SOMA);
             (left, lista, res) = self.uno();
             temp = self.geraTemp();
-            quad = ('+', temp, 0, res);
-            return (False, [quad], temp);
+            lista.append(('+', temp, 0, res));
+            return (False, lista, temp);
         elif(Atual.token == Token.SUB):
             self.consume(Token.SUB);
             (left, lista, res) = self.uno();
             temp = self.geraTemp();
-            quad = ('-', temp, 0, res);
-            return (False, [quad], temp);
+            lista.append(('-', temp, 0, res));
+            return (False, lista, temp);
         else:
             return self.fator();
 
@@ -475,7 +547,7 @@ class Sintatico():
             self.consume(Token.ABREPAR);
             (left, lista, res) = self.atrib();
             self.consume(Token.FECHAPAR);
-            return (False, [], res);
+            return (False, lista, res);
         else:
             lexema = int(Atual.lexema);
             temp = self.geraTemp();
