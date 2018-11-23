@@ -25,13 +25,17 @@ class Sintatico():
         self.labelSeed   = 0;
         self.labelLivres = [];
 
+        # Escopo de Bloco:
+        self.blocoAtual = -1;
+
     def fecha(self):
         self.lexico.fecha();
 
     def parse(self):
         self.lexico.getToken();
-        self.function();
+        codigo = self.function();
         self.consume(Atual.token);
+        print(codigo);
 
     def consume(self, token):
         if(Atual.token == token):
@@ -44,7 +48,7 @@ class Sintatico():
             return self.tempLivres.pop();
         
         self.tempSeed += 1;
-        return "_temp" + str(self.tempSeed);
+        return self.formatVarName(str(self.tempSeed));
 
     def liberaTemp(self, temp):
         if(temp not in self.tempLivres):
@@ -55,19 +59,23 @@ class Sintatico():
             return self.labelLivres.pop();
         
         self.labelSeed += 1;
-        return "_label" + str(self.labelSeed);
+        return "label_" + str(self.labelSeed);
 
     def liberaLabel(self, label):
         if(label not in self.labelLivres):
             self.labelLivres.append(label);
 
+    def formatVarName(self, var):
+        return "b_" + str(self.blocoAtual) + "_" + var;
+
     def function(self):
         self.type();
         self.consume(Token.IDENT);
         self.consume(Token.ABREPAR);
-        self.argList();
+        listaA = self.argList();
         self.consume(Token.FECHAPAR);
-        self.bloco();
+        listaB = self.bloco();
+        return listaA + listaB;
 
     def type(self):
         if(Atual.token == Token.FLOAT):
@@ -79,28 +87,32 @@ class Sintatico():
 
     def bloco(self):
         self.consume(Token.ABRECHA);
+        self.blocoAtual += 1;
         codigo = self.stmtList();
-        print(codigo);
+        self.blocoAtual -= 1;
         self.consume(Token.FECHACHA);
         return codigo;
 
     def argList(self):
         if(Atual.token in self.first["argList"]):
-            self.arg();
-            self.restoArgList();
+            listaA = self.arg();
+            listaR = self.restoArgList();
+            return listaA + listaR;
         else:
-            pass;
+            return [];
 
     def restoArgList(self):
         if(Atual.token == Token.VIRG):
             self.consume(Token.VIRG);
             self.argList();
+            return [];
         else:
-            pass;
+            return [];
 
     def arg(self):
         self.type();
         self.consume(Token.IDENT);
+        return [];
 
     def stmtList(self):
         if(Atual.token in self.first["stmtList"]):
@@ -132,8 +144,7 @@ class Sintatico():
             self.consume(Token.PTOVIRG);
             return [];
         elif(Atual.token in self.first["declaration"]):
-            self.declaration();
-            return [];
+            return self.declaration();
         elif(Atual.token in self.first["ioStmt"]):
             return self.ioStmt();
         else:
@@ -200,11 +211,11 @@ class Sintatico():
         fim    = self.geraLabel();
 
         listaCom = self.stmt(inicio, fim);
-        codigo   = [];
+        codigo = [];
         codigo.append(('label', inicio, None, None));
-        codigo   = codigo + expr;
+        codigo = codigo + expr;
         codigo.append(('if', res, fim, None));
-        codigo   = codigo + listaCom;
+        codigo = codigo + listaCom;
         codigo.append(('jump', inicio, None, None));
         codigo.append(('label', fim, None, None));
 
@@ -244,11 +255,14 @@ class Sintatico():
     def declaration(self):
         temp1 = self.type();
         temp2 = self.identList();
+        lista = [];
 
         # Para cada id na lista declarada:
         for id in temp2:
+            varNome = self.formatVarName(id);
+
             # Se a id ja existir:
-            if(id in self.tabSimb):
+            if(varNome in self.tabSimb):
                 raise ErroSemantico("Varivel ja declarada.");
             # Senao adiciona a tabela de simbolos:
             else:
@@ -259,10 +273,14 @@ class Sintatico():
                 else:
                     valor = float(0);
 
+                quad = ('=', varNome, 0, None);
+                lista.append(quad);
+
                 # Adiciona novo simbolo:
-                self.tabSimb[id] = (temp1, valor); # (tipo, valor)
+                self.tabSimb[varNome] = (temp1, valor); # (tipo, valor)
 
         self.consume(Token.PTOVIRG);
+        return lista;
 
     def identList(self):
         res = [Atual.lexema];
@@ -315,7 +333,7 @@ class Sintatico():
         elif(Atual.token == Token.IDENT):
 
             # Variavel nao declarada:
-            if(Atual.lexema not in self.tabSimb):
+            if(self.formatVarName(Atual.lexema) not in self.tabSimb):
                 raise ErroSemantico("Varivel " + Atual.lexema + " nao foi declarada.");
 
             quad = ('print', Atual.lexema, None, None);
@@ -527,7 +545,7 @@ class Sintatico():
 
     def fator(self):
         if(Atual.token == Token.NUMfloat):
-            temp = self.geraTemp();
+            temp = self.formatVarName(self.geraTemp());
             lexema = float(Atual.lexema);
             quad = ('=', temp, lexema, None);
             self.consume(Token.NUMfloat);
@@ -535,7 +553,7 @@ class Sintatico():
         elif(Atual.token == Token.IDENT):
 
             # Variavel nao declarada:
-            if(Atual.lexema not in self.tabSimb):
+            if(self.formatVarName(Atual.lexema) not in self.tabSimb):
                 raise ErroSemantico("Varivel " + Atual.lexema + " nao foi declarada.");
 
             temp = self.geraTemp();
@@ -549,9 +567,8 @@ class Sintatico():
             self.consume(Token.FECHAPAR);
             return (False, lista, res);
         else:
-            lexema = int(Atual.lexema);
             temp = self.geraTemp();
-            quad = ('=', temp, lexema, None);
+            quad = ('=', temp, Atual.lexema, None);
             self.consume(Token.NUMint);
             return (False, [quad], temp); # False: Nao pode aparecer do lado esquerdo.
 
@@ -616,5 +633,6 @@ if __name__ == "__main__":
     except ErroSintatico:
         raise;
 
-    #print(sint.tabSimb);
+    print("\nTabela de Simbolos: ");
+    print(sint.tabSimb);
     sint.fecha();
