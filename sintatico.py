@@ -48,7 +48,8 @@ class Sintatico():
             return self.tempLivres.pop();
         
         self.tempSeed += 1;
-        return self.formatVarName(str(self.tempSeed));
+        return "b_" + str(self.blocoAtual) + "_temp" + str(self.tempSeed);
+        #return self.formatVarName(str(self.tempSeed));
 
     def liberaTemp(self, temp):
         if(temp not in self.tempLivres):
@@ -67,6 +68,37 @@ class Sintatico():
 
     def formatVarName(self, var):
         return "b_" + str(self.blocoAtual) + "_" + var;
+
+    def existeVarEscopo(self, var):
+        """ Busca pela variavel em todos os escopos com id menor ou igual ao atual. """
+        index = var.find('_', 2);
+        idBloco = int(var[2:index]);
+        nomeVar = var[(index + 1):];
+
+        for variavel, tipo in self.tabSimb.items():
+            indexA = variavel.find('_', 2);
+            idBlocoA = int(variavel[2:indexA]);
+            nomeVarA = variavel[(indexA + 1):];
+
+            if(idBlocoA <= idBloco) and (nomeVar == nomeVarA):
+                return True;
+
+        return False;
+
+    def liberaVarsBloco(self):
+        """ Libera todas as variaveis e temps do bloco atual. """
+        paraDeletar = [];
+
+        for variavel, tipo in self.tabSimb.items():
+            index = variavel.find('_', 2);
+            idBloco = int(variavel[2:index]);
+            nomeVar = variavel[(index + 1):];
+
+            if(idBloco == self.blocoAtual):
+                paraDeletar.append(variavel);
+
+        for var in paraDeletar:
+            del self.tabSimb[var];
 
     def function(self):
         self.type();
@@ -89,6 +121,11 @@ class Sintatico():
         self.consume(Token.ABRECHA);
         self.blocoAtual += 1;
         codigo = self.stmtList();
+        # print("ANTES DE DELETAR")
+        # print(self.tabSimb);
+        self.liberaVarsBloco();
+        # print("DEPOIS DE DELETAR")
+        # print(self.tabSimb);
         self.blocoAtual -= 1;
         self.consume(Token.FECHACHA);
         return codigo;
@@ -214,7 +251,7 @@ class Sintatico():
         codigo = [];
         codigo.append(('label', inicio, None, None));
         codigo = codigo + expr;
-        codigo.append(('if', res, fim, None));
+        codigo.append(('if', res, None, fim));
         codigo = codigo + listaCom;
         codigo.append(('jump', inicio, None, None));
         codigo.append(('label', fim, None, None));
@@ -229,16 +266,15 @@ class Sintatico():
 
         self.consume(Token.FECHAPAR);
 
-        inicio = self.geraLabel();
         fim    = self.geraLabel();
 
-        listaCom = self.stmt(inicio, fim);
+        listaCom = self.stmt(None, fim);
         listaComElse = self.elsePart();
 
         codigo = [];
-        codigo.append(('label', inicio, None, None));
+        # codigo.append(('label', inicio, None, None));
         codigo = codigo + expr;
-        codigo.append(('if', res, fim, None));
+        codigo.append(('if', res, None, fim));
         codigo = codigo + listaCom;
         codigo.append(('label', fim, None, None));
         codigo = codigo + listaComElse;
@@ -253,12 +289,12 @@ class Sintatico():
             return [];
 
     def declaration(self):
-        temp1 = self.type();
-        temp2 = self.identList();
-        lista = [];
+        tipo = self.type();
+        listaVar = self.identList();
+        lista = []; # Lista de declaracoes para a maq virtual.
 
         # Para cada id na lista declarada:
-        for id in temp2:
+        for id in listaVar:
             varNome = self.formatVarName(id);
 
             # Se a id ja existir:
@@ -266,18 +302,12 @@ class Sintatico():
                 raise ErroSemantico("Varivel ja declarada.");
             # Senao adiciona a tabela de simbolos:
             else:
-                # Determina se o valor eh inteiro ou real:
-                valor = None;
-                if(temp1 == 'int'):
-                    valor = int(0);
-                else:
-                    valor = float(0);
-
+                # Cria novo comando para a maquina virtual:
                 quad = ('=', varNome, 0, None);
                 lista.append(quad);
 
                 # Adiciona novo simbolo:
-                self.tabSimb[varNome] = (temp1, valor); # (tipo, valor)
+                self.tabSimb[varNome] = tipo;
 
         self.consume(Token.PTOVIRG);
         return lista;
@@ -295,7 +325,7 @@ class Sintatico():
             self.consume(Token.IDENT);
             self.restoIdentList(idList);
         else:
-            pass;
+            pass; # Vazio.
 
     def optExpr(self):
         if(Atual.token in self.first["expr"]):
@@ -332,8 +362,10 @@ class Sintatico():
         # Identificador:
         elif(Atual.token == Token.IDENT):
 
+            varName = self.formatVarName(Atual.lexema);
+
             # Variavel nao declarada:
-            if(self.formatVarName(Atual.lexema) not in self.tabSimb):
+            if(self.existeVarEscopo(varName) is False):
                 raise ErroSemantico("Varivel " + Atual.lexema + " nao foi declarada.");
 
             quad = ('print', Atual.lexema, None, None);
@@ -552,13 +584,14 @@ class Sintatico():
             return (False, [quad], temp);
         elif(Atual.token == Token.IDENT):
 
+            varName = self.formatVarName(Atual.lexema);
+
             # Variavel nao declarada:
-            if(self.formatVarName(Atual.lexema) not in self.tabSimb):
+            if(self.existeVarEscopo(varName) is False):
                 raise ErroSemantico("Varivel " + Atual.lexema + " nao foi declarada.");
 
             temp = self.geraTemp();
-            lexema = Atual.lexema;
-            quad = ('=', temp, lexema, None);
+            quad = ('=', temp, varName, None);
             self.consume(Token.IDENT);
             return (True, [quad], temp);
         elif(Atual.token == Token.ABREPAR):
@@ -634,5 +667,4 @@ if __name__ == "__main__":
         raise;
 
     print("\nTabela de Simbolos: ");
-    print(sint.tabSimb);
     sint.fecha();
