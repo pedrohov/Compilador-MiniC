@@ -8,7 +8,7 @@ import sys;
 
 # Esconde o traceback das excecoes.
 # Comentar para debug.
-#sys.tracebacklimit = 0;
+sys.tracebacklimit = 0;
 
 class Sintatico():
     def __init__(self, arquivo):

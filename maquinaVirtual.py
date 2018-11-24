@@ -7,7 +7,7 @@ import sys;
 
 # Esconde o traceback das excecoes.
 # Comentar para debug.
-#sys.tracebacklimit = 0;
+sys.tracebacklimit = 0;
 
 
 class MaquinaVirtual(object):
@@ -33,7 +33,6 @@ class MaquinaVirtual(object):
             self.codigo = sintatico.parse();
             self.createLabels();
             self.run();
-            print(self.vars)
         except Exception:
             raise;
 
