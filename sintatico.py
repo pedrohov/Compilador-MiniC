@@ -236,11 +236,21 @@ class Sintatico():
         if(Atual.token == Token.SCAN):
             self.consume(Token.SCAN);
             self.consume(Token.ABREPAR);
+
+            msg = Atual.lexema[1:-1]; # Remove aspas.
+
             self.consume(Token.STR);
             self.consume(Token.VIRG);
+
+            local = self.formatVarName(Atual.lexema);
+            local = self.getVarEscopo(local);
+
             self.consume(Token.IDENT);
-            self.confume(Token.FECHAPAR);
+            self.consume(Token.FECHAPAR);
             self.consume(Token.PTOVIRG);
+
+            return [('scan', local, msg, None)];
+
         else:
             self.consume(Token.PRINT);
             self.consume(Token.ABREPAR);

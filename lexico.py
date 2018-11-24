@@ -55,7 +55,7 @@ class Token:
 
 class Atual:
     linha  = 1;
-    coluna = 0;
+    coluna = 1;
     token  = None;
     lexema = "";
 
@@ -357,7 +357,7 @@ class Lexico:
                         break;
                 char = self.getchar();
                 if((char == "/") or (char == "EOF")):
-                    Atual.lexema = Atual.lexema[:-3];
+                    Atual.lexema = Atual.lexema[:-4];
                     estado = 1;
 
 if __name__ == "__main__":

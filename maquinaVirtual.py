@@ -33,6 +33,7 @@ class MaquinaVirtual(object):
             self.codigo = sintatico.parse();
             self.createLabels();
             self.run();
+            print(self.vars)
         except Exception:
             raise;
 
@@ -98,7 +99,8 @@ class MaquinaVirtual(object):
                     PC += 1;
                     continue;
 
-                # 
+                # Determina se valor dos operadores esta em uma variavel
+                # e define o valor real de cada um:
                 if(op1 is not None):
                     if(type(op1) is str) and (op1 not in self.vars):
                         self.vars[op1] = 0;
@@ -188,7 +190,7 @@ class MaquinaVirtual(object):
 
     def scan(self, x, y):
         if x is not None:
-            print(x);
+            print(x, end='');
         return float(input(""));
 
     def print(self, x, y):
