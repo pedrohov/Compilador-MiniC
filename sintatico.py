@@ -8,7 +8,7 @@ import sys;
 
 # Esconde o traceback das excecoes.
 # Comentar para debug.
-sys.tracebacklimit = 0;
+#sys.tracebacklimit = 0;
 
 class Sintatico():
     def __init__(self, arquivo):
@@ -35,7 +35,9 @@ class Sintatico():
         self.lexico.getToken();
         codigo = self.function();
         self.consume(Atual.token);
-        print(codigo);
+        self.consume(Token.EOF);
+        codigo.append(('stop', None, None, None));
+        return codigo;
 
     def consume(self, token):
         if(Atual.token == token):
@@ -49,7 +51,6 @@ class Sintatico():
         
         self.tempSeed += 1;
         return "b_" + str(self.blocoAtual) + "_temp" + str(self.tempSeed);
-        #return self.formatVarName(str(self.tempSeed));
 
     def liberaTemp(self, temp):
         if(temp not in self.tempLivres):
@@ -84,6 +85,22 @@ class Sintatico():
                 return True;
 
         return False;
+
+    def getVarEscopo(self, var):
+        """ Busca pela variavel em todos os escopos com id menor ou igual ao atual. """
+        index = var.find('_', 2);
+        idBloco = int(var[2:index]);
+        nomeVar = var[(index + 1):];
+
+        for variavel, tipo in self.tabSimb.items():
+            indexA = variavel.find('_', 2);
+            idBlocoA = int(variavel[2:indexA]);
+            nomeVarA = variavel[(indexA + 1):];
+
+            if(idBlocoA <= idBloco) and (nomeVar == nomeVarA):
+                return variavel;
+
+        return var;
 
     def liberaVarsBloco(self):
         """ Libera todas as variaveis e temps do bloco atual. """
@@ -209,10 +226,10 @@ class Sintatico():
 
         listaCom = self.stmt(inicio, fim);
         codigo   = [];
-        codigo.append(('label', inicio, None, None));
         codigo = codigo + atrib;
+        codigo.append(('label', inicio, None, None));
         codigo = codigo + compa;
-        codigo.append(('if', resC, fim, None));
+        codigo.append(('if', resC, None, fim));
         codigo = codigo + listaCom + incre;
         codigo.append(('jump', inicio, None, None));
         codigo.append(('label', fim, None, None));
@@ -266,18 +283,21 @@ class Sintatico():
 
         self.consume(Token.FECHAPAR);
 
-        fim    = self.geraLabel();
+        true  = self.geraLabel();
+        false = self.geraLabel();
 
-        listaCom = self.stmt(None, fim);
+        listaCom = self.stmt(true, false);
         listaComElse = self.elsePart();
 
         codigo = [];
         # codigo.append(('label', inicio, None, None));
         codigo = codigo + expr;
-        codigo.append(('if', res, None, fim));
+        codigo.append(('if', res, None, false));
         codigo = codigo + listaCom;
-        codigo.append(('label', fim, None, None));
+        codigo.append(('jump', true, None, None));
+        codigo.append(('label', false, None, None));
         codigo = codigo + listaComElse;
+        codigo.append(('label', true, None, None));
 
         return codigo;
 
@@ -351,12 +371,12 @@ class Sintatico():
     def out(self):
         # Real:
         if(Atual.token == Token.NUMfloat):
-            quad = ('print', Atual.lexema, None, None);
+            quad = ('print', None, float(Atual.lexema), None);
             self.consume(Token.NUMfloat);
             return [quad];
         # String:
         elif(Atual.token == Token.STR):
-            quad = ('print', Atual.lexema, None, None);
+            quad = ('print', None, Atual.lexema, None);
             self.consume(Token.STR);
             return [quad];
         # Identificador:
@@ -368,12 +388,14 @@ class Sintatico():
             if(self.existeVarEscopo(varName) is False):
                 raise ErroSemantico("Varivel " + Atual.lexema + " nao foi declarada.");
 
-            quad = ('print', Atual.lexema, None, None);
+            varName = self.getVarEscopo(varName);
+
+            quad = ('print', None, varName, None);
             self.consume(Token.IDENT);
             return [quad];
         # Inteiro:
         else:
-            quad = ('print', Atual.lexema, None, None);
+            quad = ('print', None, int(Atual.lexema), None);
             self.consume(Token.NUMint);
             return [quad];
 
@@ -394,7 +416,7 @@ class Sintatico():
         if(Atual.token == Token.IGUAL):
             self.consume(Token.IGUAL);
             (left, lista, res) = self.atrib();
-            lista.append(('=', valor, res, None));
+            lista.append(('=', None, valor, res));
             return (False, lista, res);
         else:
         	return (True, [], None); # Vazio.
@@ -589,11 +611,12 @@ class Sintatico():
             # Variavel nao declarada:
             if(self.existeVarEscopo(varName) is False):
                 raise ErroSemantico("Varivel " + Atual.lexema + " nao foi declarada.");
+            else:
+                varName = self.getVarEscopo(varName);
 
-            temp = self.geraTemp();
-            quad = ('=', temp, varName, None);
+            quad = ('=', varName, varName, None);
             self.consume(Token.IDENT);
-            return (True, [quad], temp);
+            return (True, [], varName);
         elif(Atual.token == Token.ABREPAR):
             self.consume(Token.ABREPAR);
             (left, lista, res) = self.atrib();
@@ -601,7 +624,7 @@ class Sintatico():
             return (False, lista, res);
         else:
             temp = self.geraTemp();
-            quad = ('=', temp, Atual.lexema, None);
+            quad = ('=', temp, int(Atual.lexema), None);
             self.consume(Token.NUMint);
             return (False, [quad], temp); # False: Nao pode aparecer do lado esquerdo.
 
@@ -662,9 +685,8 @@ if __name__ == "__main__":
 
     try:
         sint.parse();
-        sint.consume(Token.EOF);
     except ErroSintatico:
         raise;
 
-    print("\nTabela de Simbolos: ");
+    #print("\nTabela de Simbolos: ");
     sint.fecha();
