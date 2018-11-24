@@ -138,11 +138,7 @@ class Sintatico():
         self.consume(Token.ABRECHA);
         self.blocoAtual += 1;
         codigo = self.stmtList();
-        # print("ANTES DE DELETAR")
-        # print(self.tabSimb);
         self.liberaVarsBloco();
-        # print("DEPOIS DE DELETAR")
-        # print(self.tabSimb);
         self.blocoAtual -= 1;
         self.consume(Token.FECHACHA);
         return codigo;
@@ -410,7 +406,7 @@ class Sintatico():
         if((not leftO) and (not leftA)):
             raise ErroSintatico(Atual.token, "Atribuicao invalida.");
 
-        return (False, listaO + listaA, resO);
+        return (False, listaO + listaA, resA);
 
     def restoAtrib(self, valor):
         if(Atual.token == Token.IGUAL):
@@ -419,47 +415,47 @@ class Sintatico():
             lista.append(('=', None, valor, res));
             return (False, lista, res);
         else:
-        	return (True, [], None); # Vazio.
+        	return (True, [], valor); # Vazio.
 
     def Or(self):
         (leftA, listaA, resA) = self.And();
         (leftO, listaO, resO) = self.restoOr(resA);
 
         if(leftA and leftO):
-            return (True, listaA + listaO, resA);
+            return (True, listaA + listaO, resO);
         else:
-            return (False, listaA + listaO, resA);
+            return (False, listaA + listaO, resO);
 
     def restoOr(self, valor):
         if(Atual.token == Token.OR):
             self.consume(Token.OR);
             (leftA, listaA, resA) = self.And();
             (leftO, listaO, resO) = self.restoOr(valor);
-            quad = ('||', valor, valor, resA);
+            quad = ('||', resO, valor, resO);
             listaA.append(quad);
-            return (False, listaA + listaO, resA);
+            return (False, listaA + listaO, resO);
         else:
-        	return (True, [], None);
+        	return (True, [], valor);
 
     def And(self):
         (leftN, listaN, resN) = self.Not();
         (leftA, listaA, resA) = self.restoAnd(resN);
 
         if(leftN and leftA):
-            return (True, listaN + listaA, resN);
+            return (True, listaN + listaA, resA);
         else:
-            return (False, listaN + listaA, resN);
+            return (False, listaN + listaA, resA);
 
     def restoAnd(self, valor):
         if(Atual.token == Token.AND):
             self.consume(Token.AND);
             (leftN, listaN, resN) = self.Not();
             (leftA, listaA, resA) = self.restoAnd(valor);
-            quad = ('&&', valor, valor, resN);
+            quad = ('&&', resA, valor, resN);
             listaN.append(quad);
-            return (False, listaN + listaA, resN);
+            return (False, listaN + listaA, resA);
         else:
-        	return (True, [], None); # Vazio.
+        	return (True, [], valor); # Vazio.
 
     def Not(self):
         if(Atual.token == Token.NOT):
@@ -476,110 +472,110 @@ class Sintatico():
         (leftR, listaR, resR) = self.restoRel(resA);
 
         if(leftA and leftR):
-            return (True, listaA + listaR, resA);
+            return (True, listaA + listaR, resR);
         else:
-            return (False, listaA + listaR, resA);
+            return (False, listaA + listaR, resR);
 
     def restoRel(self, valor):
         if(Atual.token == Token.CIGUAL):
             self.consume(Token.CIGUAL);
             (left, lista, res) = self.add();
-            quad = ('==', valor, valor, res);
+            quad = ('==', res, valor, res);
             lista.append(quad);
             return (False, lista, res);
         elif(Atual.token == Token.MAIOR):
             self.consume(Token.MAIOR);
             (left, lista, res) = self.add();
-            quad = ('>', valor, valor, res);
+            quad = ('>', res, valor, res);
             lista.append(quad);
             return (False, lista, res);
         elif(Atual.token == Token.MENOR):
             self.consume(Token.MENOR);
             (left, lista, res) = self.add();
-            quad = ('<', valor, valor, res);
+            quad = ('<', res, valor, res);
             lista.append(quad);
             return (False, lista, res);
         elif(Atual.token == Token.MAIORI):
             self.consume(Token.MAIORI);
             (left, lista, res) = self.add();
-            quad = ('>=', valor, valor, res);
+            quad = ('>=', res, valor, res);
             lista.append(quad);
             return (False, lista, res);
         elif(Atual.token == Token.MENORI):
             self.consume(Token.MENORI);
             (left, lista, res) = self.add();
-            quad = ('<=', valor, valor, res);
+            quad = ('<=', res, valor, res);
             lista.append(quad);
             return (False, lista, res);
         elif(Atual.token == Token.DIFFER):
             self.consume(Token.DIFFER);
             (left, lista, res) = self.add();
-            quad = ('!=', valor, valor, res);
+            quad = ('!=', res, valor, res);
             lista.append(quad);
             return (False, lista, res);
         else:
-        	return (True, [], None);
+        	return (True, [], valor);
 
     def add(self):
         (leftM, listaM, resM) = self.mult();
         (leftA, listaA, resA) = self.restoAdd(resM);
 
         if(leftM and leftA):
-            return (True , listaM + listaA, resM);
+            return (True , listaM + listaA, resA);
         else:
-            return (False, listaM + listaA, resM);
+            return (False, listaM + listaA, resA);
         
     def restoAdd(self, valor):
         if(Atual.token == Token.SOMA):
             self.consume(Token.SOMA);
             (leftM, listaM, resM) = self.mult();
             (leftA, listaA, resA) = self.restoAdd(valor);
-            quad = ('+', valor, valor, resM);
+            quad = ('+', resA, valor, resM);
             listaM.append(quad);
-            return (False, listaM + listaA, resM);
+            return (False, listaM + listaA, resA);
         elif(Atual.token == Token.SUB):
             self.consume(Token.SUB);
             (leftM, listaM, resM) = self.mult();
             (leftA, listaA, resA) = self.restoAdd(valor);
-            quad = ('-', valor, valor, resM);
+            quad = ('-', resA, valor, resM);
             listaM.append(quad);
-            return (False, listaM + listaA, resM);
+            return (False, listaM + listaA, resA);
         else:
-            return (True, [], None); # Vazio.
+            return (True, [], valor); # Vazio.
 
     def mult(self):
         (leftU, listaU, resU) = self.uno();
         (leftM, listaM, resM) = self.restoMult(resU);
 
         if(leftU and leftM):
-            return (True, listaU + listaM, resU);
+            return (True, listaU + listaM, resM);
         else:
-            return (False, listaU + listaM, resU);
+            return (False, listaU + listaM, resM);
 
     def restoMult(self, valor):
         if(Atual.token == Token.MULT):
             self.consume(Token.MULT);
             (leftU, listaU, resU) = self.uno();
             (leftM, listaM, resM) = self.restoMult(valor);
-            quad = ('*', valor, valor, resU);
+            quad = ('*', resM, valor, resU);
             listaU.append(quad);
-            return (False, listaU + listaM, resU);
+            return (False, listaU + listaM, resM);
         elif(Atual.token == Token.DIV):
             self.consume(Token.DIV);
             (leftU, listaU, resU) = self.uno();
             (leftM, listaM, resM) = self.restoMult(valor);
-            quad = ('/', valor, valor, resU);
+            quad = ('/', resM, valor, resU);
             listaU.append(quad);
-            return (False, listaU + listaM, resU);
+            return (False, listaU + listaM, resM);
         elif(Atual.token == Token.MOD):
             self.consume(Token.MOD);
             (leftU, listaU, resU) = self.uno();
             (leftM, listaM, resM) = self.restoMult(valor);
-            quad = ('%', valor, valor, resU);
+            quad = ('%', resM, valor, resU);
             lista = listaU.append(quad);
-            return (False, listaU + listaM, resU);
+            return (False, listaU + listaM, resM);
         else:
-            return (True, [], None); # Vazio.
+            return (True, [], valor); # Vazio.
 
     def uno(self):
         if(Atual.token == Token.SOMA):
@@ -684,7 +680,8 @@ if __name__ == "__main__":
     sint = Sintatico(sys.argv[1]);
 
     try:
-        sint.parse();
+        codigo = sint.parse();
+        print(codigo);
     except ErroSintatico:
         raise;
 
