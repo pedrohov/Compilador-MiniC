@@ -22,7 +22,7 @@ class MaquinaVirtual(object):
         """ Armazena o index das labels do codigo. """
         for i in range(len(self.codigo)):
             if(self.codigo[i][0] == 'label'):
-                # key = label, valor = index:
+                # key = label, valor = index do codigo:
                 self.labels[self.codigo[i][1]] = i;
 
     def start(self):
@@ -112,6 +112,7 @@ class MaquinaVirtual(object):
                     elif (type(op2) is str):
                         op2 = self.vars[op2];
 
+
                 self.vars[self.codigo[PC][1]] = funcao(op1, op2);
                 
             # Executa chamadas:
@@ -132,7 +133,10 @@ class MaquinaVirtual(object):
 
                 # Chamada com retorno:
                 if(self.codigo[PC][1] is not None):
-                    self.vars[self.codigo[PC][1]] = funcao(op1, op2);
+                    if(type(self.vars[self.codigo[PC][1]]) is float):
+                        self.vars[self.codigo[PC][1]] = float(funcao(op1, op2));
+                    else:
+                        self.vars[self.codigo[PC][1]] = int(funcao(op1, op2));
                 # Metodo (print):
                 else:
                     funcao(op1, op2);
@@ -189,8 +193,9 @@ class MaquinaVirtual(object):
 
     def scan(self, x, y):
         if x is not None:
-            print(x, end='');
-        return float(input(""));
+            return float(input(x));
+        else:
+            return float(input(""));
 
     def print(self, x, y):
         if x is not None:

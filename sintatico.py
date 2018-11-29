@@ -123,7 +123,7 @@ class Sintatico():
         self.consume(Token.ABREPAR);
         listaA = self.argList();
         self.consume(Token.FECHAPAR);
-        listaB = self.bloco();
+        listaB = self.bloco(None, None);
         return listaA + listaB;
 
     def type(self):
@@ -134,10 +134,10 @@ class Sintatico():
             self.consume(Token.INT);
             return 'int';
 
-    def bloco(self):
+    def bloco(self, inicio, fim):
         self.consume(Token.ABRECHA);
         self.blocoAtual += 1;
-        codigo = self.stmtList();
+        codigo = self.stmtList(inicio, fim);
         self.liberaVarsBloco();
         self.blocoAtual -= 1;
         self.consume(Token.FECHACHA);
@@ -164,10 +164,10 @@ class Sintatico():
         self.consume(Token.IDENT);
         return [];
 
-    def stmtList(self):
+    def stmtList(self, inicio, fim):
         if(Atual.token in self.first["stmtList"]):
-            codigoStmt = self.stmt(None, None);
-            codigoList = self.stmtList();
+            codigoStmt = self.stmt(inicio, fim);
+            codigoList = self.stmtList(inicio, fim);
             return codigoStmt + codigoList;
         else:
             return [];
@@ -182,13 +182,11 @@ class Sintatico():
             self.consume(Token.PTOVIRG);
             return codigo;
         elif(Atual.token in self.first["ifStmt"]):
-            return self.ifStmt();
+            return self.ifStmt(inicio, fim);
         elif(Atual.token in self.first["bloco"]):
-            return self.bloco();
+            return self.bloco(inicio, fim);
         elif(Atual.token == Token.BREAK):
-            self.consume(Token.BREAK);
-            self.consume(Token.PTOVIRG);
-            return [];
+            return self.Break(fim);
         elif(Atual.token == Token.CONTINUE):
             self.consume(Token.CONTINUE);
             self.consume(Token.PTOVIRG);
@@ -281,7 +279,7 @@ class Sintatico():
 
         return codigo;
 
-    def ifStmt(self):
+    def ifStmt(self, inicio, fim):
         self.consume(Token.IF);
         self.consume(Token.ABREPAR);
 
@@ -292,8 +290,8 @@ class Sintatico():
         true  = self.geraLabel();
         false = self.geraLabel();
 
-        listaCom = self.stmt(true, false);
-        listaComElse = self.elsePart();
+        listaCom = self.stmt(inicio, fim);
+        listaComElse = self.elsePart(inicio, fim);
 
         codigo = [];
         # codigo.append(('label', inicio, None, None));
@@ -307,17 +305,27 @@ class Sintatico():
 
         return codigo;
 
-    def elsePart(self):
+    def elsePart(self, inicio, fim):
         if(Atual.token == Token.ELSE):
             self.consume(Token.ELSE);
-            return self.stmt(None, None);
+            return self.stmt(inicio, fim);
         else:
+            return []; # Vazio.
+
+    def Break(self, fim):
+        if(fim is not None):
+            self.consume(Token.BREAK);
+            self.consume(Token.PTOVIRG);
+            return [('jump', fim, None, None)];
+        else:
+            self.consume(Token.BREAK);
+            self.consume(Token.PTOVIRG);
             return [];
 
     def declaration(self):
         tipo = self.type();
         listaVar = self.identList();
-        lista = []; # Lista de declaracoes para a maq virtual.
+        lista = []; # Lista de declaracoes.
 
         # Para cada id na lista declarada:
         for id in listaVar:
@@ -328,8 +336,13 @@ class Sintatico():
                 raise ErroSemantico("Varivel ja declarada.");
             # Senao adiciona a tabela de simbolos:
             else:
+                # Define o tipo:
+                valor = 0;
+                if(tipo == 'float'):
+                    valor = float(0);
+
                 # Cria novo comando para a maquina virtual:
-                quad = ('=', varNome, 0, None);
+                quad = ('=', varNome, valor, None);
                 lista.append(quad);
 
                 # Adiciona novo simbolo:
@@ -416,7 +429,7 @@ class Sintatico():
         if((not leftO) and (not leftA)):
             raise ErroSintatico(Atual.token, "Atribuicao invalida.");
 
-        return (False, listaO + listaA, resA);
+        return (False, listaO + listaA, resO);
 
     def restoAtrib(self, valor):
         if(Atual.token == Token.IGUAL):
@@ -605,7 +618,7 @@ class Sintatico():
 
     def fator(self):
         if(Atual.token == Token.NUMfloat):
-            temp = self.formatVarName(self.geraTemp());
+            temp = self.geraTemp();
             lexema = float(Atual.lexema);
             quad = ('=', temp, lexema, None);
             self.consume(Token.NUMfloat);
