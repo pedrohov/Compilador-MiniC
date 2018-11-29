@@ -188,9 +188,7 @@ class Sintatico():
         elif(Atual.token == Token.BREAK):
             return self.Break(fim);
         elif(Atual.token == Token.CONTINUE):
-            self.consume(Token.CONTINUE);
-            self.consume(Token.PTOVIRG);
-            return [];
+            return self.Continue(inicio);
         elif(Atual.token in self.first["declaration"]):
             return self.declaration();
         elif(Atual.token in self.first["ioStmt"]):
@@ -322,6 +320,16 @@ class Sintatico():
             self.consume(Token.PTOVIRG);
             return [];
 
+    def Continue(self, inicio):
+        if(inicio is not None):
+            self.consume(Token.CONTINUE);
+            self.consume(Token.PTOVIRG);
+            return [('jump', inicio, None, None)];
+        else:
+            self.consume(Token.BREAK);
+            self.consume(Token.PTOVIRG);
+            return [];
+
     def declaration(self):
         tipo = self.type();
         listaVar = self.identList();
@@ -337,7 +345,7 @@ class Sintatico():
             # Senao adiciona a tabela de simbolos:
             else:
                 # Define o tipo:
-                valor = 0;
+                valor = int(0);
                 if(tipo == 'float'):
                     valor = float(0);
 
@@ -434,8 +442,8 @@ class Sintatico():
     def restoAtrib(self, valor):
         if(Atual.token == Token.IGUAL):
             self.consume(Token.IGUAL);
-            (left, lista, res) = self.atrib();
-            lista.append(('=', None, valor, res));
+            (_, lista, res) = self.atrib();
+            lista.append(('=', valor, res, None));
             return (False, lista, res);
         else:
         	return (True, [], valor); # Vazio.
@@ -452,8 +460,8 @@ class Sintatico():
     def restoOr(self, valor):
         if(Atual.token == Token.OR):
             self.consume(Token.OR);
-            (leftA, listaA, resA) = self.And();
-            (leftO, listaO, _) = self.restoOr(valor);
+            (_, listaA, resA) = self.And();
+            (_, listaO, _) = self.restoOr(valor);
             temp = self.geraTemp();
             quad = ('||', temp, valor, resA);
             listaA.append(quad);
@@ -473,8 +481,8 @@ class Sintatico():
     def restoAnd(self, valor):
         if(Atual.token == Token.AND):
             self.consume(Token.AND);
-            (leftN, listaN, resN) = self.Not();
-            (leftA, listaA, _) = self.restoAnd(valor);
+            (_, listaN, resN) = self.Not();
+            (_, listaA, _) = self.restoAnd(valor);
             temp = self.geraTemp();
             quad = ('&&', temp, valor, resN);
             listaN.append(quad);
@@ -485,10 +493,11 @@ class Sintatico():
     def Not(self):
         if(Atual.token == Token.NOT):
             self.consume(Token.NOT);
-            (left, lista, res) = self.Not();
-            quad = ('!', res, res, None);
+            (_, lista, res) = self.Not();
+            temp = self.geraTemp();
+            quad = ('!', temp, res, None);
             lista.append(quad);
-            return (False, lista, res);
+            return (False, lista, temp);
         else:
             return self.rel();
 
@@ -504,42 +513,42 @@ class Sintatico():
     def restoRel(self, valor):
         if(Atual.token == Token.CIGUAL):
             self.consume(Token.CIGUAL);
-            (left, lista, res) = self.add();
+            (_, lista, res) = self.add();
             temp = self.geraTemp();
             quad = ('==', temp, valor, res);
             lista.append(quad);
             return (False, lista, temp);
         elif(Atual.token == Token.MAIOR):
             self.consume(Token.MAIOR);
-            (left, lista, res) = self.add();
+            (_, lista, res) = self.add();
             temp = self.geraTemp();
             quad = ('>', temp, valor, res);
             lista.append(quad);
             return (False, lista, temp);
         elif(Atual.token == Token.MENOR):
             self.consume(Token.MENOR);
-            (left, lista, res) = self.add();
+            (_, lista, res) = self.add();
             temp = self.geraTemp();
             quad = ('<', temp, valor, res);
             lista.append(quad);
             return (False, lista, temp);
         elif(Atual.token == Token.MAIORI):
             self.consume(Token.MAIORI);
-            (left, lista, res) = self.add();
+            (_, lista, res) = self.add();
             temp = self.geraTemp();
             quad = ('>=', temp, valor, res);
             lista.append(quad);
             return (False, lista, temp);
         elif(Atual.token == Token.MENORI):
             self.consume(Token.MENORI);
-            (left, lista, res) = self.add();
+            (_, lista, res) = self.add();
             temp = self.geraTemp();
             quad = ('<=', temp, valor, res);
             lista.append(quad);
             return (False, lista, temp);
         elif(Atual.token == Token.DIFFER):
             self.consume(Token.DIFFER);
-            (left, lista, res) = self.add();
+            (_, lista, res) = self.add();
             temp = self.geraTemp();
             quad = ('!=', temp, valor, res);
             lista.append(quad);
@@ -559,16 +568,16 @@ class Sintatico():
     def restoAdd(self, valor):
         if(Atual.token == Token.SOMA):
             self.consume(Token.SOMA);
-            (leftM, listaM, resM) = self.mult();
-            (leftA, listaA, _) = self.restoAdd(valor);
+            (_, listaM, resM) = self.mult();
+            (_, listaA, _) = self.restoAdd(valor);
             temp = self.geraTemp();
             quad = ('+', temp, valor, resM);
             listaM.append(quad);
             return (False, listaM + listaA, temp);
         elif(Atual.token == Token.SUB):
             self.consume(Token.SUB);
-            (leftM, listaM, resM) = self.mult();
-            (leftA, listaA, _) = self.restoAdd(valor);
+            (_, listaM, resM) = self.mult();
+            (_, listaA, _) = self.restoAdd(valor);
             temp = self.geraTemp();
             quad = ('-', temp, valor, resM);
             listaM.append(quad);
@@ -588,24 +597,24 @@ class Sintatico():
     def restoMult(self, valor):
         if(Atual.token == Token.MULT):
             self.consume(Token.MULT);
-            (leftU, listaU, resU) = self.uno();
-            (leftM, listaM, _) = self.restoMult(valor);
+            (_, listaU, resU) = self.uno();
+            (_, listaM, _) = self.restoMult(valor);
             temp = self.geraTemp();
             quad = ('*', temp, valor, resU);
             listaU.append(quad);
             return (False, listaU + listaM, temp);
         elif(Atual.token == Token.DIV):
             self.consume(Token.DIV);
-            (leftU, listaU, resU) = self.uno();
-            (leftM, listaM, _) = self.restoMult(valor);
+            (_, listaU, resU) = self.uno();
+            (_, listaM, _) = self.restoMult(valor);
             temp = self.geraTemp();
             quad = ('/', temp, valor, resU);
             listaU.append(quad);
             return (False, listaU + listaM, temp);
         elif(Atual.token == Token.MOD):
             self.consume(Token.MOD);
-            (leftU, listaU, resU) = self.uno();
-            (leftM, listaM, _) = self.restoMult(valor);
+            (_, listaU, resU) = self.uno();
+            (_, listaM, _) = self.restoMult(valor);
             temp = self.geraTemp();
             quad = ('%', temp, valor, resU);
             lista = listaU.append(quad);
@@ -616,13 +625,13 @@ class Sintatico():
     def uno(self):
         if(Atual.token == Token.SOMA):
             self.consume(Token.SOMA);
-            (left, lista, res) = self.uno();
+            (_, lista, res) = self.uno();
             temp = self.geraTemp();
             lista.append(('+', temp, 0, res));
             return (False, lista, temp);
         elif(Atual.token == Token.SUB):
             self.consume(Token.SUB);
-            (left, lista, res) = self.uno();
+            (_, lista, res) = self.uno();
             temp = self.geraTemp();
             lista.append(('-', temp, 0, res));
             return (False, lista, temp);

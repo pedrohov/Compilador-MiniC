@@ -90,46 +90,35 @@ class MaquinaVirtual(object):
                 op1 = self.codigo[PC][2];
                 op2 = self.codigo[PC][3];
                 funcao = operadores[self.codigo[PC][0]];
-                
-                # Caso em que uma atribuicao passa o valor
-                # de uma variavel para outra:
-                if((type(op1) is str) and (type(op2) is str) and (self.codigo[PC][0] == '=')):
-                    self.vars[op1] = self.vars[op2];
-                    PC += 1;
-                    continue;
 
                 # Determina se valor dos operadores esta em uma variavel
                 # e define o valor real de cada um:
-                if(op1 is not None):
-                    if(type(op1) is str) and (op1 not in self.vars):
-                        self.vars[op1] = 0;
-                    elif (type(op1) is str):
-                        op1 = self.vars[op1];
+                if(op1 in self.vars):
+                    op1 = self.vars[op1];
 
-                if(op2 is not None):
-                    if(type(op2) is str) and (op2 not in self.vars):
-                        self.vars[op2] = 0;
-                    elif (type(op2) is str):
-                        op2 = self.vars[op2];
+                if(op2 in self.vars):
+                    op2 = self.vars[op2];
 
+                # Executa a operacao e trata os tipos do resultado:
+                result = funcao(op1, op2);
 
-                self.vars[self.codigo[PC][1]] = funcao(op1, op2);
+                if(self.codigo[PC][1] in self.vars):
+                    if(type(self.vars[self.codigo[PC][1]]) is int):
+                        result = int(result);
+
+                self.vars[self.codigo[PC][1]] = result;
                 
             # Executa chamadas:
             elif self.codigo[PC][0] in calls:
                 funcao = calls[self.codigo[PC][0]];
 
                 op1 = self.codigo[PC][2];
-                if ((op1 is not None) and (type(op1) is str)):
-                    # Identificador. Se falso, op1 eh uma string:
-                    if(op1 in self.vars):
-                        op1 = self.vars[op1];
+                if(op1 in self.vars):
+                    op1 = self.vars[op1];
 
                 op2 = self.codigo[PC][3];
-                if ((op2 is not None) and (type(op2) is str)):
-                    # Identificador. Se falso, op1 eh uma string:
-                    if(op2 in self.vars):
-                        op2 = self.vars[op1];
+                if(op2 in self.vars):
+                    op2 = self.vars[op1];
 
                 # Chamada com retorno:
                 if(self.codigo[PC][1] is not None):
