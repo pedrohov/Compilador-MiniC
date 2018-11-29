@@ -184,7 +184,7 @@ class MaquinaVirtual(object):
         if x is not None:
             return float(input(x));
         else:
-            return float(input(""));
+            return float(input("''"));
 
     def print(self, x, y):
         if x is not None:

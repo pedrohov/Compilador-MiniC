@@ -233,7 +233,8 @@ class Sintatico():
             self.consume(Token.SCAN);
             self.consume(Token.ABREPAR);
 
-            msg = Atual.lexema[1:-1]; # Remove aspas.
+            # String antes do scan:
+            msg = Atual.lexema;
 
             self.consume(Token.STR);
             self.consume(Token.VIRG);

@@ -284,6 +284,8 @@ class Lexico:
                 else:
                     estado = 21;
             elif(estado == 22):
+                # Remove aspas:
+                Atual.lexema = Atual.lexema[1:-1];
                 self.atualizaToken(Token.STR);
                 return;
             # Float:
