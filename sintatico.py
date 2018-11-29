@@ -453,10 +453,11 @@ class Sintatico():
         if(Atual.token == Token.OR):
             self.consume(Token.OR);
             (leftA, listaA, resA) = self.And();
-            (leftO, listaO, resO) = self.restoOr(valor);
-            quad = ('||', resO, valor, resO);
+            (leftO, listaO, _) = self.restoOr(valor);
+            temp = self.geraTemp();
+            quad = ('||', temp, valor, resA);
             listaA.append(quad);
-            return (False, listaA + listaO, resO);
+            return (False, listaA + listaO, temp);
         else:
         	return (True, [], valor);
 
@@ -473,10 +474,11 @@ class Sintatico():
         if(Atual.token == Token.AND):
             self.consume(Token.AND);
             (leftN, listaN, resN) = self.Not();
-            (leftA, listaA, resA) = self.restoAnd(valor);
-            quad = ('&&', resA, valor, resN);
+            (leftA, listaA, _) = self.restoAnd(valor);
+            temp = self.geraTemp();
+            quad = ('&&', temp, valor, resN);
             listaN.append(quad);
-            return (False, listaN + listaA, resA);
+            return (False, listaN + listaA, temp);
         else:
         	return (True, [], valor); # Vazio.
 
@@ -503,39 +505,45 @@ class Sintatico():
         if(Atual.token == Token.CIGUAL):
             self.consume(Token.CIGUAL);
             (left, lista, res) = self.add();
-            quad = ('==', res, valor, res);
+            temp = self.geraTemp();
+            quad = ('==', temp, valor, res);
             lista.append(quad);
-            return (False, lista, res);
+            return (False, lista, temp);
         elif(Atual.token == Token.MAIOR):
             self.consume(Token.MAIOR);
             (left, lista, res) = self.add();
-            quad = ('>', res, valor, res);
+            temp = self.geraTemp();
+            quad = ('>', temp, valor, res);
             lista.append(quad);
-            return (False, lista, res);
+            return (False, lista, temp);
         elif(Atual.token == Token.MENOR):
             self.consume(Token.MENOR);
             (left, lista, res) = self.add();
-            quad = ('<', res, valor, res);
+            temp = self.geraTemp();
+            quad = ('<', temp, valor, res);
             lista.append(quad);
-            return (False, lista, res);
+            return (False, lista, temp);
         elif(Atual.token == Token.MAIORI):
             self.consume(Token.MAIORI);
             (left, lista, res) = self.add();
-            quad = ('>=', res, valor, res);
+            temp = self.geraTemp();
+            quad = ('>=', temp, valor, res);
             lista.append(quad);
-            return (False, lista, res);
+            return (False, lista, temp);
         elif(Atual.token == Token.MENORI):
             self.consume(Token.MENORI);
             (left, lista, res) = self.add();
-            quad = ('<=', res, valor, res);
+            temp = self.geraTemp();
+            quad = ('<=', temp, valor, res);
             lista.append(quad);
-            return (False, lista, res);
+            return (False, lista, temp);
         elif(Atual.token == Token.DIFFER):
             self.consume(Token.DIFFER);
             (left, lista, res) = self.add();
-            quad = ('!=', res, valor, res);
+            temp = self.geraTemp();
+            quad = ('!=', temp, valor, res);
             lista.append(quad);
-            return (False, lista, res);
+            return (False, lista, temp);
         else:
         	return (True, [], valor);
 
@@ -552,17 +560,19 @@ class Sintatico():
         if(Atual.token == Token.SOMA):
             self.consume(Token.SOMA);
             (leftM, listaM, resM) = self.mult();
-            (leftA, listaA, resA) = self.restoAdd(valor);
-            quad = ('+', resA, valor, resM);
+            (leftA, listaA, _) = self.restoAdd(valor);
+            temp = self.geraTemp();
+            quad = ('+', temp, valor, resM);
             listaM.append(quad);
-            return (False, listaM + listaA, resA);
+            return (False, listaM + listaA, temp);
         elif(Atual.token == Token.SUB):
             self.consume(Token.SUB);
             (leftM, listaM, resM) = self.mult();
-            (leftA, listaA, resA) = self.restoAdd(valor);
-            quad = ('-', resA, valor, resM);
+            (leftA, listaA, _) = self.restoAdd(valor);
+            temp = self.geraTemp();
+            quad = ('-', temp, valor, resM);
             listaM.append(quad);
-            return (False, listaM + listaA, resA);
+            return (False, listaM + listaA, temp);
         else:
             return (True, [], valor); # Vazio.
 
@@ -579,24 +589,27 @@ class Sintatico():
         if(Atual.token == Token.MULT):
             self.consume(Token.MULT);
             (leftU, listaU, resU) = self.uno();
-            (leftM, listaM, resM) = self.restoMult(valor);
-            quad = ('*', resM, valor, resU);
+            (leftM, listaM, _) = self.restoMult(valor);
+            temp = self.geraTemp();
+            quad = ('*', temp, valor, resU);
             listaU.append(quad);
-            return (False, listaU + listaM, resM);
+            return (False, listaU + listaM, temp);
         elif(Atual.token == Token.DIV):
             self.consume(Token.DIV);
             (leftU, listaU, resU) = self.uno();
-            (leftM, listaM, resM) = self.restoMult(valor);
-            quad = ('/', resM, valor, resU);
+            (leftM, listaM, _) = self.restoMult(valor);
+            temp = self.geraTemp();
+            quad = ('/', temp, valor, resU);
             listaU.append(quad);
-            return (False, listaU + listaM, resM);
+            return (False, listaU + listaM, temp);
         elif(Atual.token == Token.MOD):
             self.consume(Token.MOD);
             (leftU, listaU, resU) = self.uno();
-            (leftM, listaM, resM) = self.restoMult(valor);
-            quad = ('%', resM, valor, resU);
+            (leftM, listaM, _) = self.restoMult(valor);
+            temp = self.geraTemp();
+            quad = ('%', temp, valor, resU);
             lista = listaU.append(quad);
-            return (False, listaU + listaM, resM);
+            return (False, listaU + listaM, temp);
         else:
             return (True, [], valor); # Vazio.
 
