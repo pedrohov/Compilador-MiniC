@@ -8,7 +8,7 @@ import sys;
 
 # Esconde o traceback das excecoes.
 # Comentar para debug.
-#sys.tracebacklimit = 0;
+sys.tracebacklimit = 0;
 
 class Sintatico():
     def __init__(self, arquivo):
@@ -36,6 +36,7 @@ class Sintatico():
         codigo = self.function();
         self.consume(Atual.token);
         self.consume(Token.EOF);
+        codigo.append(('stop', None, None, None));
         return codigo;
 
     def consume(self, token):
@@ -190,9 +191,9 @@ class Sintatico():
             return self.Continue(inicio);
         elif(Atual.token == Token.RETURN):
             self.consume(Token.RETURN);
-            self.fator();
-            return [('stop', None, None, None)];
+            (_, _, _) = self.fator();
             self.consume(Token.PTOVIRG);
+            return [];
         elif(Atual.token in self.first["declaration"]):
             return self.declaration();
         elif(Atual.token in self.first["ioStmt"]):
@@ -668,10 +669,16 @@ class Sintatico():
             self.consume(Token.FECHAPAR);
             return (False, lista, res);
         else:
-            temp = self.geraTemp();
-            quad = ('=', temp, int(Atual.lexema), None);
-            self.consume(Token.NUMint);
-            return (False, [quad], temp); # False: Nao pode aparecer do lado esquerdo.
+            # Tenta converter o lexema para inteiro,
+            # pode receber outro token errado, mas o erro so eh 
+            # visto apos self.consume. Portanto e preciso de try/catch:
+            try:
+                temp = self.geraTemp();
+                quad = ('=', temp, int(Atual.lexema), None);
+                self.consume(Token.NUMint);
+                return (False, [quad], temp); # False: Nao pode aparecer do lado esquerdo.
+            except:
+                return (False, [], None);
 
     def initFirst(self):
         # -1 = LAMBDA.
