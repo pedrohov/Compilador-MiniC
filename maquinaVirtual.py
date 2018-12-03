@@ -188,9 +188,9 @@ class MaquinaVirtual(object):
 
     def print(self, x, y):
         if x is not None:
-            print(str(x));
+            print(str(x), end='');
         if y is not None:
-            print(str(y));
+            print(str(y), end='');
 
     def If(self, exp, lab1, lab2):
         if(exp is False):

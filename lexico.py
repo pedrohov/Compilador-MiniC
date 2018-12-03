@@ -282,7 +282,9 @@ class Lexico:
                 return;
             # String:
             elif(estado == 21):
-                if(char == '"'):
+                if(char == "\\"):
+                    estado = 39;
+                elif(char == '"'):
                     estado = 22;
                 else:
                     estado = 21;
@@ -364,6 +366,13 @@ class Lexico:
                 if((char == "/") or (char == "EOF")):
                     Atual.lexema = Atual.lexema[:-4];
                     estado = 1;
+            elif(estado == 39):
+                if(char == 'n'):
+                    Atual.lexema = Atual.lexema[:-2] + "\n";
+                elif(char == 't'):
+                    Atual.lexema = Atual.lexema[:-2] + "\t";
+                    
+                estado = 21;
 
 if __name__ == "__main__":
 
