@@ -8,7 +8,7 @@ import sys;
 
 # Esconde o traceback das excecoes.
 # Comentar para debug.
-sys.tracebacklimit = 0;
+#sys.tracebacklimit = 0;
 
 class Sintatico():
     def __init__(self, arquivo):
@@ -36,7 +36,6 @@ class Sintatico():
         codigo = self.function();
         self.consume(Atual.token);
         self.consume(Token.EOF);
-        codigo.append(('stop', None, None, None));
         return codigo;
 
     def consume(self, token):
@@ -189,6 +188,11 @@ class Sintatico():
             return self.Break(fim);
         elif(Atual.token == Token.CONTINUE):
             return self.Continue(inicio);
+        elif(Atual.token == Token.RETURN):
+            self.consume(Token.RETURN);
+            self.fator();
+            return [('stop', None, None, None)];
+            self.consume(Token.PTOVIRG);
         elif(Atual.token in self.first["declaration"]):
             return self.declaration();
         elif(Atual.token in self.first["ioStmt"]):
@@ -293,7 +297,6 @@ class Sintatico():
         listaComElse = self.elsePart(inicio, fim);
 
         codigo = [];
-        # codigo.append(('label', inicio, None, None));
         codigo = codigo + expr;
         codigo.append(('if', res, None, false));
         codigo = codigo + listaCom;
@@ -681,7 +684,7 @@ class Sintatico():
                 "bloco": [Token.ABRECHA],
                 "stmtList": [Token.NOT, Token.ABRECHA, Token.SOMA, Token.SUB,
                 Token.PTOVIRG, Token.IDENT, Token.NUMfloat, Token.NUMint, Token.BREAK, Token.CONTINUE,
-                Token.FLOAT, Token.FOR, Token.IF, Token.INT, Token.PRINT, Token.SCAN, Token.WHILE, Token.ABRECHA, -1],
+                Token.FLOAT, Token.FOR, Token.IF, Token.INT, Token.PRINT, Token.SCAN, Token.WHILE, Token.ABRECHA, Token.RETURN, -1],
                 "stmt": [Token.NOT, Token.ABRECHA, Token.SOMA, Token.SUB,
                 Token.PTOVIRG, Token.IDENT, Token.NUMfloat, Token.NUMint, Token.BREAK, Token.CONTINUE,
                 Token.FLOAT, Token.FOR, Token.IF, Token.INT, Token.PRINT, Token.SCAN, Token.WHILE, Token.ABRECHA, -1],

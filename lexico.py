@@ -43,15 +43,16 @@ class Token:
     DIFFER   = 35; # !=
     ABRECHA  = 36; # {
     FECHACHA = 37; # }
+    RETURN   = 38;
 
-    msg = ['('       , ')'     , ','       , ';'   , 'NUMint',
-           'NUMfloat', 'IDENT' , 'STR'     , '+'   , '*'     ,
-           '/'       , '-'     , '%'       , '**'  , 'SCAN'  ,
-           'PRINT'   , 'EOF'   , 'ERRO'    , '='   , 'FOR'   , 
-           'WHILE'   , 'IF'    , 'ELSE'    , 'AND' , 'OR'    ,
-           'NOT'     , 'BREAK' , 'CONTINUE', 'INT' , 'FLOAT' ,
-           '>'       , '<'     , '>='      , '<='  , '=='    ,
-           '!='      , '{'     , '}'       ];
+    msg = ['('       , ')'     , ','       , ';'     , 'NUMint',
+           'NUMfloat', 'IDENT' , 'STR'     , '+'     , '*'     ,
+           '/'       , '-'     , '%'       , '**'    , 'SCAN'  ,
+           'PRINT'   , 'EOF'   , 'ERRO'    , '='     , 'FOR'   , 
+           'WHILE'   , 'IF'    , 'ELSE'    , 'AND'   , 'OR'    ,
+           'NOT'     , 'BREAK' , 'CONTINUE', 'INT'   , 'FLOAT' ,
+           '>'       , '<'     , '>='      , '<='    , '=='    ,
+           '!='      , '{'     , '}'       , 'RETURN'];
 
 class Atual:
     linha  = 1;
@@ -114,6 +115,8 @@ class Lexico:
             Atual.token = Token.BREAK;
         elif(Atual.lexema == "continue"):
             Atual.token = Token.CONTINUE;
+        elif(Atual.lexema == "return"):
+        	Atual.token = Token.RETURN;
         elif(Atual.lexema == "int"):
             Atual.token = Token.INT;
         elif(Atual.lexema == "float"):
