@@ -403,8 +403,9 @@ class Sintatico():
     def out(self):
         # Real:
         if(Atual.token == Token.NUMfloat):
-            quad = ('print', None, float(Atual.lexema), None);
+            lexema = Atual.lexema;
             self.consume(Token.NUMfloat);
+            quad = ('print', None, float(lexema), None);
             return [quad];
         # String:
         elif(Atual.token == Token.STR):
@@ -427,8 +428,9 @@ class Sintatico():
             return [quad];
         # Inteiro:
         else:
-            quad = ('print', None, int(Atual.lexema), None);
+            lexema = Atual.lexema;
             self.consume(Token.NUMint);
+            quad = ('print', None, int(lexema), None);
             return [quad];
 
     def expr(self):
@@ -646,9 +648,9 @@ class Sintatico():
     def fator(self):
         if(Atual.token == Token.NUMfloat):
             temp = self.geraTemp();
-            lexema = float(Atual.lexema);
-            quad = ('=', temp, lexema, None);
+            lexema = Atual.lexema;
             self.consume(Token.NUMfloat);
+            quad = ('=', temp, float(lexema), None);
             return (False, [quad], temp);
         elif(Atual.token == Token.IDENT):
 
@@ -669,16 +671,11 @@ class Sintatico():
             self.consume(Token.FECHAPAR);
             return (False, lista, res);
         else:
-            # Tenta converter o lexema para inteiro,
-            # pode receber outro token errado, mas o erro so eh 
-            # visto apos self.consume. Portanto e preciso de try/catch:
-            try:
-                temp = self.geraTemp();
-                quad = ('=', temp, int(Atual.lexema), None);
-                self.consume(Token.NUMint);
-                return (False, [quad], temp); # False: Nao pode aparecer do lado esquerdo.
-            except:
-                return (False, [], None);
+            temp = self.geraTemp();
+            lexema = Atual.lexema;
+            self.consume(Token.NUMint);
+            quad = ('=', temp, int(lexema), None);
+            return (False, [quad], temp); # False: Nao pode aparecer do lado esquerdo.
 
     def initFirst(self):
         # -1 = LAMBDA.
