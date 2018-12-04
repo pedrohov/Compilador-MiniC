@@ -1,1 +1,0 @@
-teste = input("Informe algo ");
