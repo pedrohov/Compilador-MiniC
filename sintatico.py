@@ -746,5 +746,4 @@ if __name__ == "__main__":
     except ErroSintatico:
         raise;
 
-    #print("\nTabela de Simbolos: ");
     sint.fecha();
