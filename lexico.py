@@ -140,12 +140,13 @@ class Lexico:
 
             # Conta uma nova linha:
             if(char == "\n"):
+                Atual.lexema = Atual.lexema[:-1];
                 Atual.linha = Atual.linha + 1;
                 Atual.coluna = 1;
 
             # Automato:
-            if(estado == 1):
-                if(char in [' ', '\t', '\n']):
+            elif(estado == 1):
+                if(char in [' ', '\t']):
                     Atual.lexema = Atual.lexema[:-1];
                     continue;
                 elif(char == 'EOF'):
@@ -355,17 +356,16 @@ class Lexico:
                     char = self.getchar();
                     if(char == "EOF"):
                         break;
+
+                Atual.linha = Atual.linha + 1;
+                Atual.coluna = 1;
                 Atual.lexema = Atual.lexema[:-3];
                 estado = 1;
             elif(estado == 38):
-                while(char != '*'):
-                    char = self.getchar();
-                    if(char == "EOF"):
-                        break;
-                char = self.getchar();
-                if((char == "/") or (char == "EOF")):
-                    Atual.lexema = Atual.lexema[:-4];
-                    estado = 1;
+                if(char != '*') and (char != "EOF"):
+                    estado = 38;
+                else:
+                    estado = 40;
             elif(estado == 39):
                 if(char == 'n'):
                     Atual.lexema = Atual.lexema[:-2] + "\n";
@@ -373,6 +373,17 @@ class Lexico:
                     Atual.lexema = Atual.lexema[:-2] + "\t";
                     
                 estado = 21;
+            elif(estado == 40):
+                if(char == "/") or (char == "EOF"):
+                    Atual.lexema = Atual.lexema[-2:-2];
+                    estado = 1;
+                elif(char == "*"):
+                    estado = 40;
+                else:
+                    estado = 38;
+            # elif(estado == 41):
+            #     if(char == '/'):
+
 
 if __name__ == "__main__":
 

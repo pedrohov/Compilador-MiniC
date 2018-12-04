@@ -92,6 +92,11 @@ class Sintatico():
         idBloco = int(var[2:index]);
         nomeVar = var[(index + 1):];
 
+        # Procura primeiro por var:
+        if var in self.tabSimb:
+            return var;
+
+        # Procura por variaveis com o mesmo nome em escopos diferentes:
         for variavel, tipo in self.tabSimb.items():
             indexA = variavel.find('_', 2);
             idBlocoA = int(variavel[2:indexA]);
@@ -420,8 +425,8 @@ class Sintatico():
             # Variavel nao declarada:
             if(self.existeVarEscopo(varName) is False):
                 raise ErroSemantico("Varivel " + Atual.lexema + " nao foi declarada.");
-
-            varName = self.getVarEscopo(varName);
+            else:
+                varName = self.getVarEscopo(varName);
 
             quad = ('print', None, varName, None);
             self.consume(Token.IDENT);
