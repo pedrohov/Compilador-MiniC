@@ -739,7 +739,10 @@ if __name__ == "__main__":
 
     try:
         codigo = sint.parse();
-        print(codigo);
+        
+        # Exibe o codigo:
+        for cod in codigo:
+        	print(cod);
     except ErroSintatico:
         raise;
 
