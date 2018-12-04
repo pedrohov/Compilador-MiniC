@@ -1,8 +1,3 @@
-/****
-
-comentarioembloco
-*****/
-
 int main() {
 	int num, div, resto;
 	scan("Entre com o inteiro: ", num);
@@ -12,9 +7,9 @@ int main() {
 	while (num > 1) {
 
 		// Encontra o menor fator:
-		for (div = 2; num % div != 0; div = div + 1);
-/*
-		print(div);*/
+		for (div = 2; num % div; div = div + 1);
+
+		print(div);
 		num = num / div;
 		
 		if (num > 1)

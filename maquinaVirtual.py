@@ -193,7 +193,7 @@ class MaquinaVirtual(object):
             print(str(y), end='');
 
     def If(self, exp, lab1, lab2):
-        if(exp is False):
+        if(exp == 0):
             return self.labels[lab2];
 
     def jump(self, indice, lab1, lab2):
