@@ -224,15 +224,18 @@ class Sintatico():
         self.consume(Token.FECHAPAR);
 
         inicio = self.geraLabel();
+        labInc = self.geraLabel();
         fim    = self.geraLabel();
 
-        listaCom = self.stmt(inicio, fim);
+        listaCom = self.stmt(labInc, fim);
         codigo   = [];
         codigo = codigo + atrib;
         codigo.append(('label', inicio, None, None));
         codigo = codigo + compa;
         codigo.append(('if', resC, None, fim));
-        codigo = codigo + listaCom + incre;
+        codigo = codigo + listaCom;
+        codigo.append(('label', labInc, None, None));
+        codigo = codigo + incre;
         codigo.append(('jump', inicio, None, None));
         codigo.append(('label', fim, None, None));
 
