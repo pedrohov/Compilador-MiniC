@@ -8,7 +8,6 @@ int main() {
 
 		// Encontra o menor fator:
 		for (div = 2; num % div; div = div + 1);
-
 		print(div);
 		num = num / div;
 		
